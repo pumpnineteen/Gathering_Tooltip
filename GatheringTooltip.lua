@@ -47,7 +47,7 @@ local tostring              = tostring
 local pairs                 = pairs
 local ipairs                = ipairs
 local floor                 = math.floor
-local table                 = table
+local tinsert               = table.insert
 local select                = select
 local print                 = print
 local type                  = type
@@ -2423,7 +2423,7 @@ local function EnumerateTooltipLines_helper(...)
             local text = region:GetText() -- string or nil
             if text then
                 DebugPrint(i, text)
-                table.insert(lines, {text = text, region = region})
+                tinsert(lines, {text = text, region = region})
             end
         end
     end
