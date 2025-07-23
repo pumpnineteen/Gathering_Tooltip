@@ -39,7 +39,7 @@ local function IsMopWow()
     return WOW_PROJECT_ID == WOW_PROJECT_MISTS_CLASSIC and LE_EXPANSION_LEVEL_CURRENT == LE_EXPANSION_MISTS
 end
 
-local format                = format
+local format                = string.format
 local tonumber              = tonumber
 local tostring              = tostring
 local pairs                 = pairs
