@@ -5,8 +5,6 @@ local GT = LibStub("AceAddon-3.0"):NewAddon(addonName, "AceConsole-3.0", "AceEve
 local L = LibStub("AceLocale-3.0"):GetLocale("GatheringTooltip")
 local NL = LibStub("AceLocale-3.0"):GetLocale("GatheringTooltipNodes")
 
-local _G = _G
-
 -- Expansion determination code from LibBagUtils.lua
 local WOW_PROJECT_ID = _G.WOW_PROJECT_ID
 local WOW_PROJECT_CLASSIC = _G.WOW_PROJECT_CLASSIC
