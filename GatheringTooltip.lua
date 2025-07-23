@@ -57,10 +57,7 @@ local GetNumSkillLines      = GetNumSkillLines
 local GetSkillLineInfo      = GetSkillLineInfo
 local UnitGUID              = UnitGUID
 local UnitLevel             = UnitLevel
-local GetSkillLevel         = GetSkillLevel
-local GetMaxSkillLevel      = GetMaxSkillLevel
 local EnumerateTooltipLines = EnumerateTooltipLines
-local GetSkillColor         = GetSkillColor
 local GetRealZoneText       = GetRealZoneText
 local GetZoneText           = GetZoneText
 local GetChatTypeIndex      = GetChatTypeIndex
@@ -2366,8 +2363,8 @@ local function gatherLevels(skill, playerLevel, playerSkill, maxSkill, threshold
 end
 
 local function checkSkill(playerLevel, skill)
-    local playerSkill = GetSkillLevel(skill.name) or 0
-    local maxSkill = GetMaxSkillLevel(skill.name) or 1000
+    local playerSkill = GT:GetSkillLevel(skill.name) or 0
+    local maxSkill = GT:GetMaxSkillLevel(skill.name) or 1000
     
     if maxSkill >= MAX_SKILL then return end
     if playerSkill > 0 and getMaxLevel(maxSkill) - playerSkill <= 25 then
@@ -2433,7 +2430,7 @@ function EnumerateTooltipLines(tooltip) -- good for script handlers that pass th
     return EnumerateTooltipLines_helper(tooltip:GetRegions())
 end
 
-function GetSkillLevel(skillName)
+function GT:GetSkillLevel(skillName)
     for i = 1, GetNumSkillLines() do
         local name, _, _, skillRank = GetSkillLineInfo(i)
         if name == skillName then
@@ -2449,7 +2446,7 @@ local baseLKSkill = 73 * 5
 local baseCataSkill = baseLKSkill + 7 * 10
 local baseCataSkill2 = baseCataSkill + 15
 
-local function getRequiredSkinningSkill(mobLevel)
+local function GetRequiredSkinningSkill(mobLevel)
     if mobLevel <= 10 then
         return 1
     elseif mobLevel <= 20 then
@@ -2471,7 +2468,7 @@ local function getRequiredSkinningSkill(mobLevel)
     end
 end
 
-local function getMaxSkinnableMobLevel(playerSkill)
+local function GetMaxSkinnableMobLevel(playerSkill)
     if playerSkill < 10 then -- Skill 1 maps to level 1-10
         return 10
     elseif playerSkill <= 100 then -- Skill 10-100 maps to level 11-20
@@ -2487,7 +2484,7 @@ local function getMaxSkinnableMobLevel(playerSkill)
     end
 end
 
-function GetSkillColor(thresholds, requiredSkill, playerSkill)
+function GT:GetSkillColor(thresholds, requiredSkill, playerSkill)
     DebugPrint("Thresholds:", thresholds)
     if playerSkill >= thresholds.grey then
         return difficultyColours.grey
@@ -2502,12 +2499,12 @@ function GetSkillColor(thresholds, requiredSkill, playerSkill)
     end
 end
 
-local function getSkinningColor(mobLevel, playerSkill)
+function GT:GetSkinningColor(mobLevel, playerSkill)
     if not playerSkill then 
         return "ffff0000" -- Red if no skinning skill
     end
     
-    local maxSkinnableLevel = getMaxSkinnableMobLevel(playerSkill)
+    local maxSkinnableLevel = GetMaxSkinnableMobLevel(playerSkill)
     local levelDiff = maxSkinnableLevel - mobLevel
 
     if levelDiff >= 20 then
@@ -2523,7 +2520,7 @@ local function getSkinningColor(mobLevel, playerSkill)
     end
 end
 
-local function GetMaxSkillLevel(skillName)
+function GT:GetMaxSkillLevel(skillName)
     for i = 1, GetNumSkillLines() do
         local name, _, _, skillRank, _, _, skillMaxRank = GetSkillLineInfo(i)
         if name == skillName then
@@ -2583,13 +2580,13 @@ local function UpdateSkinningTooltip(tooltip, skillName)
     local mobLevel = UnitLevel(unit)
     if not mobLevel or mobLevel <= 0 then return end -- Level 0 or negative means hidden/boss
     
-    local playerSkill = GetSkillLevel(skillName)
+    local playerSkill = GT:GetSkillLevel(skillName)
     if not playerSkill then return end
     
-    local requiredSkill = getRequiredSkinningSkill(mobLevel)
-    local maxSkinnableLevel = getMaxSkinnableMobLevel(playerSkill)
-    local colour = getSkinningColor(mobLevel, playerSkill)
-    local maxSkill = GetMaxSkillLevel(skillName)
+    local requiredSkill = GetRequiredSkinningSkill(mobLevel)
+    local maxSkinnableLevel = GetMaxSkinnableMobLevel(playerSkill)
+    local colour = GT:GetSkinningColor(mobLevel, playerSkill)
+    local maxSkill = GT:GetMaxSkillLevel(skillName)
     
     local colouredText = "|c"..colour..skillName.."|r ("..L["Req:"].." "..requiredSkill..")"
     tooltip:AddLine(colouredText, 1, 1, 1)
@@ -2655,7 +2652,7 @@ local function UpdateTooltip(tooltip)
                         DebugPrint("Node data:", nodeData)
                         local skillName = nodeData.skill
                         local requiredSkill = nodeData.requiredSkill
-                        local playerSkill = GetSkillLevel(skillName)
+                        local playerSkill = GT:GetSkillLevel(skillName)
                         playerSkills[skillName] = playerSkill -- Store the player's skill level for this gathering skill
                         DebugPrint("Skill name:", skillName)
                         DebugPrint("Player skill:", playerSkill)
@@ -2665,7 +2662,7 @@ local function UpdateTooltip(tooltip)
                         local plainText = nodeLine:gsub("|c%x%x%x%x%x%x%x%x(.-)|r", "%1")
 
                         if playerSkill then
-                            local color = GetSkillColor(nodeData.thresholds, requiredSkill, playerSkill)
+                            local color = GT:GetSkillColor(nodeData.thresholds, requiredSkill, playerSkill)
                             DebugPrint("Color:", color)
                             local coloredText = "|c"..color..plainText.."|r ("..L["Req:"].." "..requiredSkill..")"
                             tooltipText = tooltipText:gsub(nodeLine, coloredText)
@@ -2681,7 +2678,7 @@ local function UpdateTooltip(tooltip)
     if foundNodes then
         for skillName, playerSkill in pairs(playerSkills) do
             if playerSkill then
-                local maxSkill = GetMaxSkillLevel(skillName)
+                local maxSkill = GT:GetMaxSkillLevel(skillName)
                 if maxSkill then
                     tooltip:AddLine(L["Current"].." "..skillName.." "..L["Skill"]..": "..playerSkill.."/"..maxSkill, 1, 1, 1)
                 else
