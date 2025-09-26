@@ -2869,7 +2869,7 @@ function GT:HandleToggle(args)
     end
 end
 
-local function switchAllMob(state)
+local function SwitchAllMob(state)
     db.global.showMobSkinning = state
     db.global.showMobMining = state
     db.global.showMobHerbalism = state
@@ -2880,12 +2880,12 @@ local function switchAllMob(state)
     showMobEngineering = state
 end
 
-function GT:handleDisable()
-    switchAllMob(false)
+function GT:HandleDisable()
+    SwitchAllMob(false)
     print(L["All gathering info on mob tooltips is now disabled."])
 end
 
-function GT:handleEnable()
-    switchAllMob(true)
+function GT:HandleEnable()
+    SwitchAllMob(true)
     print(L["All gathering info on mob tooltips is now enabled."])
 end
