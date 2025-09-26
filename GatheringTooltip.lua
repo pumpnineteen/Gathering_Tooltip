@@ -5,6 +5,21 @@ local GatheringTooltip = LibStub("AceAddon-3.0"):NewAddon(addonName, "AceConsole
 local L = LibStub("AceLocale-3.0"):GetLocale("GatheringTooltip")
 local NL = LibStub("AceLocale-3.0"):GetLocale("GatheringTooltipNodes")
 
+-- TODO: Properly localize these strings
+L["Usage: /gtt <toggle|enable|disable> <skinning|mining|herbalism|engineering>"] = true
+L["Skinning info on mob tooltips is now enabled."] = true
+L["Skinning info on mob tooltips is now disabled."] = true
+L["Mining info on mob tooltips is now enabled."] = true
+L["Mining info on mob tooltips is now disabled."] = true
+L["Herbalism info on mob tooltips is now enabled."] = true
+L["Herbalism info on mob tooltips is now disabled."] = true
+L["Engineering info on mob tooltips is now enabled."] = true
+L["Engineering info on mob tooltips is now disabled."] = true
+L["Usage: /gtt toggle <skinning|mining|herbalism|engineering>"] = true
+L["All gathering info on mob tooltips is now disabled."] = true
+L["All gathering info on mob tooltips is now enabled."] = true
+
+
 local nodeNameList = {
     -- Classic Mining Nodes --
     NL["Ooze Covered Gold Vein"],
@@ -2199,16 +2214,28 @@ local otherColours = {
     white = "ffffffcf"
 }
 
-local f = CreateFrame("Frame")
-f:SetScript("OnEvent", function(self, event, ...)
-    -- No specific event handling; focus on hooks
-end)
+local db
+local showMobSkinning
+local showMobHerbalism
+local showMobMining
+local showMobEngineering
 
 local debug = false
 local function DebugPrint(...)
     if debug then
         print(...)
     end
+end
+
+local function split(inputstr, delimiter)
+    if delimiter == nil then
+        delimiter = "%s"  -- Default: split by whitespace.
+    end
+    local result = {}
+    for substr in string.gmatch(inputstr, "([^" .. delimiter .. "]+)") do
+        table.insert(result, substr)
+    end
+    return result
 end
 
 function ListMethods(obj)
@@ -2391,6 +2418,7 @@ end
 
 
 local function UpdateSkinningTooltip(tooltip)
+    if not showMobSkinning then return end
     -- Get the unit from the tooltip
     local _, unit = tooltip:GetUnit()
     if not unit then return end
@@ -2424,6 +2452,7 @@ local function UpdateSkinningTooltip(tooltip)
 end
 
 local function UpdateMiningTooltip(tooltip)
+    if not showMobMining then return end
     -- Get the unit from the tooltip
     local _, unit = tooltip:GetUnit()
     if not unit then return end
@@ -2457,13 +2486,14 @@ local function UpdateMiningTooltip(tooltip)
 end
 
 local function UpdateHerbalismTooltip(tooltip)
+    if not showMobHerbalism then return end
     -- Get the unit from the tooltip
     local _, unit = tooltip:GetUnit()
     if not unit then return end
     
     -- Get creature type and level
     -- local creatureType = UnitCreatureType(unit)
-    if not isMinable(unit) then return end
+    if not isGatherable(unit) then return end
     
     -- Get mob level
     local mobLevel = UnitLevel(unit)
@@ -2490,7 +2520,7 @@ local function UpdateHerbalismTooltip(tooltip)
 end
 
 -- Function to update tooltips
-function UpdateTooltip(tooltip)
+function GatheringTooltip:UpdateTooltip(tooltip)
     if not tooltip or type(tooltip.GetRegions) ~= "function" then
         return
     end
@@ -2583,39 +2613,136 @@ end
 -- Hook for all tooltips
 GameTooltip:HookScript("OnTooltipSetItem", function(tooltip)
     DebugPrint("GameTooltip OnTooltipSetItem")
-    UpdateTooltip(tooltip)
+    GatheringTooltip:UpdateTooltip(tooltip)
 end)
 
 GameTooltip:HookScript("OnShow", function(tooltip)
     DebugPrint("GameTooltip OnShow")
-    UpdateTooltip(tooltip)
+    GatheringTooltip:UpdateTooltip(tooltip)
 end)
 
 ItemRefTooltip:HookScript("OnTooltipSetItem", function(tooltip)
     DebugPrint("ItemRefTooltip OnTooltipSetItem")
-    UpdateTooltip(tooltip)
+    GatheringTooltip:UpdateTooltip(tooltip)
 end)
 
 
 ItemRefTooltip:HookScript("OnShow", function(tooltip)
     DebugPrint("ItemRefTooltip OnShow")
-    UpdateTooltip(tooltip)
+    GatheringTooltip:UpdateTooltip(tooltip)
 end)
 
 ShoppingTooltip1:HookScript("OnShow", function(tooltip)
     DebugPrint("ShoppingTooltip1 OnShow")
-    UpdateTooltip(tooltip)
+    GatheringTooltip:UpdateTooltip(tooltip)
 end)
 
 ShoppingTooltip2:HookScript("OnShow", function(tooltip)
     DebugPrint("ShoppingTooltip2 OnShow")
-    UpdateTooltip(tooltip)
+    GatheringTooltip:UpdateTooltip(tooltip)
 end)
 
 
+local defaults = {
+    profile = {
+    },
+    char = {
+    },
+    global = {
+        showMobSkinning = true,
+        showMobMining = true,
+        showMobHerbalism = true,
+        showMobEngineering = true,
+    },
+}
 
+function GatheringTooltip:OnEnable()
+    db = LibStub("AceDB-3.0"):New("GatheringTooltipDB", defaults, true)
+    showMobSkinning = db.global.showMobSkinning
+    showMobMining = db.global.showMobMining
+    showMobHerbalism = db.global.showMobHerbalism
+    showMobEngineering = db.global.showMobEngineering
 
+    db.global.showMobSkinning = showMobSkinning
+    db.global.showMobMining = showMobMining
+    db.global.showMobHerbalism = showMobHerbalism
+    db.global.showMobEngineering = showMobEngineering
+end
 
+function GatheringTooltip:OnInitialize()
+    self:RegisterChatCommand("gtt", "HandleSlashCommand")
+end
 
+function GatheringTooltip:HandleSlashCommand(msg)
+    local args = split(msg)
+    local _msg = args[1]
+    if _msg == "toggle" then
+        self:HandleToggle(args)
+    elseif _msg == "disable" then
+        self:HandleDisable()
+    elseif _msg == "enable" then
+        self:HandleEnable()
+    else
+        print(L["Usage: /gtt <toggle|enable|disable> <skinning|mining|herbalism|engineering>"])
+    end
+end
 
+function GatheringTooltip:HandleToggle(args)
+    local option = args[2]
+    if option == "skinning" then
+        db.global.showMobSkinning = not db.global.showMobSkinning
+        showMobSkinning = db.global.showMobSkinning
+        if db.global.showMobSkinning then
+            print(L["Skinning info on mob tooltips is now enabled."])
+        else
+            print(L["Skinning info on mob tooltips is now disabled."])
+        end
+    elseif option == "mining" then
+        db.global.showMobMining = not db.global.showMobMining
+        showMobMining = db.global.showMobMining
+        if db.global.showMobMining then
+            print(L["Mining info on mob tooltips is now enabled."])
+        else
+            print(L["Mining info on mob tooltips is now disabled."])
+        end
+    elseif option == "herbalism" then
+        db.global.showMobHerbalism = not db.global.showMobHerbalism
+        showMobHerbalism = db.global.showMobHerbalism
+        if db.global.showMobHerbalism then
+            print(L["Herbalism info on mob tooltips is now enabled."])
+        else
+            print(L["Herbalism info on mob tooltips is now disabled."])
+        end
+    elseif option == "engineering" then
+        db.global.showMobEngineering = not db.global.showMobEngineering
+        showMobEngineering = db.global.showMobEngineering
+        if db.global.showMobEngineering then
+            print(L["Engineering info on mob tooltips is now enabled."])
+        else
+            print(L["Engineering info on mob tooltips is now disabled."])
+        end
+    else
+        print(L["Usage: /gtt toggle <skinning|mining|herbalism|engineering>"])
+    end
+end
 
+local function switchAllMob(state)
+    db.global.showMobSkinning = state
+    db.global.showMobMining = state
+    db.global.showMobHerbalism = state
+    db.global.showMobEngineering = state
+    showMobSkinning = state
+    showMobMining = state
+    showMobHerbalism = state
+    showMobEngineering = state
+end
+
+function GatheringTooltip:handleDisable()
+    switchAllMob(false)
+    print(L["All gathering info on mob tooltips is now disabled."])
+end
+
+function GatheringTooltip:handleEnable()
+    switchAllMob(true)
+    print(L["All gathering info on mob tooltips is now enabled."])
+end

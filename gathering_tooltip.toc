@@ -1,4 +1,4 @@
-## Interface: 11507, 40402, 50500
+## Interface: 11507, 50501
 ## Title: Gathering Tooltip
 ## Notes: Highlights mining, herbalism, and fishing nodes based on skill
 ## Author: Pump19
