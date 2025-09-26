@@ -1,9 +1,66 @@
 local addonName, addonTable = ...
-local GatheringTooltip = LibStub("AceAddon-3.0"):NewAddon(addonName, "AceConsole-3.0", "AceEvent-3.0")
+local GT = LibStub("AceAddon-3.0"):NewAddon(addonName, "AceConsole-3.0", "AceEvent-3.0")
 
 -- Initialize localization
 local L = LibStub("AceLocale-3.0"):GetLocale("GatheringTooltip")
 local NL = LibStub("AceLocale-3.0"):GetLocale("GatheringTooltipNodes")
+
+-- Expansion determination code from LibBagUtils.lua
+local WOW_PROJECT_ID = _G.WOW_PROJECT_ID
+local WOW_PROJECT_CLASSIC = _G.WOW_PROJECT_CLASSIC
+local WOW_PROJECT_BURNING_CRUSADE_CLASSIC = _G.WOW_PROJECT_BURNING_CRUSADE_CLASSIC
+local WOW_PROJECT_WRATH_CLASSIC = _G.WOW_PROJECT_WRATH_CLASSIC
+local WOW_PROJECT_CATACLYSM_CLASSIC = _G.WOW_PROJECT_CATACLYSM_CLASSIC
+local WOW_PROJECT_MISTS_CLASSIC = _G.WOW_PROJECT_MISTS_CLASSIC
+local WOW_PROJECT_MAINLINE = _G.WOW_PROJECT_MAINLINE
+local LE_EXPANSION_LEVEL_CURRENT = _G.LE_EXPANSION_LEVEL_CURRENT
+local LE_EXPANSION_BURNING_CRUSADE =_G.LE_EXPANSION_BURNING_CRUSADE
+local LE_EXPANSION_WRATH_OF_THE_LICH_KING = _G.LE_EXPANSION_WRATH_OF_THE_LICH_KING
+local LE_EXPANSION_CATACLYSM = _G.LE_EXPANSION_CATACLYSM
+local LE_EXPANSION_MISTS = _G.LE_EXPANSION_MISTS_OF_PANDARIA
+
+local function IsClassicWow() --luacheck: ignore 212
+    return WOW_PROJECT_ID == WOW_PROJECT_CLASSIC
+end
+
+local function IsTBCWow() --luacheck: ignore 212
+    return WOW_PROJECT_ID == WOW_PROJECT_BURNING_CRUSADE_CLASSIC and LE_EXPANSION_LEVEL_CURRENT == LE_EXPANSION_BURNING_CRUSADE
+end
+
+local function IsWrathWow() --luacheck: ignore 212
+    return WOW_PROJECT_ID == WOW_PROJECT_WRATH_CLASSIC and LE_EXPANSION_LEVEL_CURRENT == LE_EXPANSION_WRATH_OF_THE_LICH_KING
+end
+
+local function IsCataWow() --luacheck: ignore 212
+    return WOW_PROJECT_ID == WOW_PROJECT_CATACLYSM_CLASSIC and LE_EXPANSION_LEVEL_CURRENT == LE_EXPANSION_CATACLYSM
+end
+
+local function IsMopWow()
+    return WOW_PROJECT_ID == WOW_PROJECT_MISTS_CLASSIC and LE_EXPANSION_LEVEL_CURRENT == LE_EXPANSION_MISTS
+end
+
+local format                = string.format
+local tonumber              = tonumber
+local tostring              = tostring
+local pairs                 = pairs
+local ipairs                = ipairs
+local floor                 = math.floor
+local tinsert               = table.insert
+local select                = select
+local print                 = print
+local type                  = type
+
+local IsResting             = IsResting
+local GetTime               = GetTime
+local UIErrorsFrame         = UIErrorsFrame
+local GetNumSkillLines      = GetNumSkillLines
+local GetSkillLineInfo      = GetSkillLineInfo
+local UnitGUID              = UnitGUID
+local UnitLevel             = UnitLevel
+local EnumerateTooltipLines = EnumerateTooltipLines
+local GetRealZoneText       = GetRealZoneText
+local GetZoneText           = GetZoneText
+local GetChatTypeIndex      = GetChatTypeIndex
 
 -- TODO: Properly localize these strings
 L["Usage: /gtt <toggle|enable|disable> <skinning|mining|herbalism|engineering>"] = true
@@ -2214,6 +2271,130 @@ local otherColours = {
     white = "ffffffcf"
 }
 
+local APPRENTICE_MAX = 75
+local JOURNEYMAN_MAX = 150
+local EXPERT_MAX = 225
+local ARTISAN_MAX = 300
+local MASTER_MAX = 375
+local GRAND_MASTER_MAX = 450
+local ILLUSTRIOUS_GRAND_MASTER_MAX = 525
+local ZEN_MASTER_MAX = 600
+
+local LEVELS = {
+    APPRENTICE_MAX,
+    JOURNEYMAN_MAX,
+    EXPERT_MAX,
+    ARTISAN_MAX,
+    MASTER_MAX,
+    GRAND_MASTER_MAX,
+    ILLUSTRIOUS_GRAND_MASTER_MAX,
+    ZEN_MASTER_MAX,
+}
+
+local GATHERING_LEVEL_THRESHOLDS = {
+    { cap = APPRENTICE_MAX,   reqLevel =   1 },
+    { cap = JOURNEYMAN_MAX,   reqLevel =   1 },
+    { cap = EXPERT_MAX,       reqLevel =  10 },
+    { cap = ARTISAN_MAX,      reqLevel =  25 },
+    { cap = MASTER_MAX,       reqLevel =  58 },
+    { cap = GRAND_MASTER_MAX, reqLevel =  70 },
+    { cap = ILLUSTRIOUS_GRAND_MASTER_MAX, reqLevel =  80 },
+    { cap = ZEN_MASTER_MAX,   reqLevel =  85 },
+}
+
+local FISHING_THRESHOLDS = {
+    { cap = APPRENTICE_MAX,   reqLevel =   5 },
+    { cap = JOURNEYMAN_MAX,   reqLevel =  10 },
+    { cap = EXPERT_MAX,       reqLevel =  10 },
+    { cap = ARTISAN_MAX,      reqLevel =  10 },
+    { cap = MASTER_MAX,       reqLevel =  58 },
+    { cap = GRAND_MASTER_MAX, reqLevel =  70 },
+    { cap = ILLUSTRIOUS_GRAND_MASTER_MAX, reqLevel =  80 },
+    { cap = ZEN_MASTER_MAX,   reqLevel =  85 },
+}
+
+local skills = {
+    { name = L["Fishing"],    thresholds = FISHING_THRESHOLDS },
+    { name = L["Mining"],     thresholds = GATHERING_LEVEL_THRESHOLDS },
+    { name = L["Herbalism"],  thresholds = GATHERING_LEVEL_THRESHOLDS },
+    { name = L["Skinning"],   thresholds = GATHERING_LEVEL_THRESHOLDS },
+}
+
+local MAX_SKILL = ARTISAN_MAX
+
+local eventHandlers = {
+    PLAYER_ENTERING_WORLD = "MaybeCheckMaxSkill",
+    PLAYER_UPDATE_RESTING = "MaybeCheckMaxSkill",
+}
+
+function GT:OnEnable()
+    if IsClassicWow() then MAX_SKILL = ARTISAN_MAX
+    elseif IsTBCWow() then MAX_SKILL = MASTER_MAX 
+    elseif IsWrathWow() then MAX_SKILL = GRAND_MASTER_MAX
+    elseif IsCataWow() then MAX_SKILL = ILLUSTRIOUS_GRAND_MASTER_MAX
+    elseif IsMopWow() then MAX_SKILL = ZEN_MASTER_MAX end
+
+    for event, func in pairs(eventHandlers) do
+        self:RegisterEvent(event, func)
+    end
+
+    self.lastChecked = 0
+end
+
+function GT:MaybeCheckMaxSkill()
+    local resting = IsResting()
+    local now = GetTime()
+    local delta = now-self.lastChecked
+    if resting and delta > 5 then
+        GT:checkMaxSkill()
+        self.lastChecked = now
+    end
+end
+
+local function remindSkilling(skill, playerSkill, maxSkill)
+    UIErrorsFrame:AddMessage(L["Current"].." "..skill.." "..L["skill"]..": ".. tostring(playerSkill).."/"..tostring(maxSkill).." !!!",1.0,0.8,0.0,GetChatTypeIndex("SYSTEM"),5)
+end
+
+
+
+local function IsMaxLevel(maxSkill, skillLevel)
+    local diff = maxSkill - skillLevel
+    return diff == 0 or diff == 15
+end
+
+local function getMaxLevel(maxSkill)
+    for _, skillLevel in ipairs(LEVELS) do
+        if IsMaxLevel(maxSkill, skillLevel) then return skillLevel end
+    end
+    return 1000 -- we shouldn't get this
+end
+
+local function gatherLevels(skill, playerLevel, playerSkill, maxSkill, thresholds)
+    for _, tier in ipairs(thresholds) do
+        if playerLevel >= tier.reqLevel and maxSkill < tier.cap then
+            return remindSkilling(skill, playerSkill, maxSkill)
+        end
+    end
+end
+
+local function checkSkill(playerLevel, skill)
+    local playerSkill = GT:GetSkillLevel(skill.name) or 0
+    local maxSkill = GT:GetMaxSkillLevel(skill.name) or 1000
+    
+    if maxSkill >= MAX_SKILL then return end
+    if playerSkill > 0 and getMaxLevel(maxSkill) - playerSkill <= 25 then
+        return gatherLevels(skill.name, playerLevel, playerSkill, maxSkill, skill.thresholds)
+    end
+end
+
+function GT:checkMaxSkill()
+    local playerLevel = UnitLevel("player")
+    for _, skill in ipairs(skills) do
+        checkSkill(playerLevel, skill)
+    end
+end
+
+
 local db
 local showMobSkinning
 local showMobHerbalism
@@ -2238,7 +2419,7 @@ local function split(inputstr, delimiter)
     return result
 end
 
-function ListMethods(obj)
+local function ListMethods(obj)
     DebugPrint("tooltip:", obj)
     DebugPrint("type:", type(obj))
     for k, v in pairs(obj) do
@@ -2246,7 +2427,7 @@ function ListMethods(obj)
     end
 end
 
-function TestMethods(obj)
+local function TestMethods(obj)
     for k, v in pairs(obj) do
         if type(v) == "function" then
             DebugPrint("Testing method:", k)
@@ -2268,7 +2449,7 @@ local function EnumerateTooltipLines_helper(...)
             local text = region:GetText() -- string or nil
             if text then
                 DebugPrint(i, text)
-                table.insert(lines, {text = text, region = region})
+                tinsert(lines, {text = text, region = region})
             end
         end
     end
@@ -2280,7 +2461,7 @@ function EnumerateTooltipLines(tooltip) -- good for script handlers that pass th
     return EnumerateTooltipLines_helper(tooltip:GetRegions())
 end
 
-function GetSkillLevel(skillName)
+function GT:GetSkillLevel(skillName)
     for i = 1, GetNumSkillLines() do
         local name, _, _, skillRank = GetSkillLineInfo(i)
         if name == skillName then
@@ -2296,7 +2477,7 @@ local baseLKSkill = 73 * 5
 local baseCataSkill = baseLKSkill + 7 * 10
 local baseCataSkill2 = baseCataSkill + 15
 
-local function getRequiredSkinningSkill(mobLevel)
+local function GetRequiredSkinningSkill(mobLevel)
     if mobLevel <= 10 then
         return 1
     elseif mobLevel <= 20 then
@@ -2318,23 +2499,23 @@ local function getRequiredSkinningSkill(mobLevel)
     end
 end
 
-local function getMaxSkinnableMobLevel(playerSkill)
+local function GetMaxSkinnableMobLevel(playerSkill)
     if playerSkill < 10 then -- Skill 1 maps to level 1-10
         return 10
     elseif playerSkill <= 100 then -- Skill 10-100 maps to level 11-20
-        return math.floor(playerSkill/10)
+        return floor(playerSkill/10)
     elseif playerSkill <= baseLKSkill then -- Above that, divide skill by 5
-        return math.floor(playerSkill/5)
+        return floor(playerSkill/5)
     elseif playerSkill <= baseCataSkill then 
-        return math.floor((playerSkill - baseLKSkill)/10) + 73
+        return floor((playerSkill - baseLKSkill)/10) + 73
     elseif playerSkill <= baseCataSkill2 then
-        return math.floor((playerSkill - baseCataSkill)/5) + 80
+        return floor((playerSkill - baseCataSkill)/5) + 80
     else
-        return math.floor((playerSkill - baseCataSkill2)/20) + 83
+        return floor((playerSkill - baseCataSkill2)/20) + 83
     end
 end
 
-function GetSkillColor(thresholds, requiredSkill, playerSkill)
+function GT:GetSkillColor(thresholds, requiredSkill, playerSkill)
     DebugPrint("Thresholds:", thresholds)
     if playerSkill >= thresholds.grey then
         return difficultyColours.grey
@@ -2349,12 +2530,12 @@ function GetSkillColor(thresholds, requiredSkill, playerSkill)
     end
 end
 
-local function getSkinningColor(mobLevel, playerSkill)
+function GT:GetSkinningColor(mobLevel, playerSkill)
     if not playerSkill then 
         return "ffff0000" -- Red if no skinning skill
     end
     
-    local maxSkinnableLevel = getMaxSkinnableMobLevel(playerSkill)
+    local maxSkinnableLevel = GetMaxSkinnableMobLevel(playerSkill)
     local levelDiff = maxSkinnableLevel - mobLevel
 
     if levelDiff >= 20 then
@@ -2370,7 +2551,7 @@ local function getSkinningColor(mobLevel, playerSkill)
     end
 end
 
-function GetMaxSkillLevel(skillName)
+function GT:GetMaxSkillLevel(skillName)
     for i = 1, GetNumSkillLines() do
         local name, _, _, skillRank, _, _, skillMaxRank = GetSkillLineInfo(i)
         if name == skillName then
@@ -2417,6 +2598,7 @@ local function isGatherable(unit)
 end
 
 
+local function UpdateSkinningTooltip(tooltip, skillName)
 local function UpdateSkinningTooltip(tooltip)
     if not showMobSkinning then return end
     -- Get the unit from the tooltip
@@ -2431,26 +2613,28 @@ local function UpdateSkinningTooltip(tooltip)
     local mobLevel = UnitLevel(unit)
     if not mobLevel or mobLevel <= 0 then return end -- Level 0 or negative means hidden/boss
     
-    local playerSkill = GetSkillLevel(L["Skinning"])
+    local playerSkill = GT:GetSkillLevel(skillName)
     if not playerSkill then return end
     
-    local requiredSkill = getRequiredSkinningSkill(mobLevel)
-    local maxSkinnableLevel = getMaxSkinnableMobLevel(playerSkill)
-    local color = getSkinningColor(mobLevel, playerSkill)
-    local maxSkill = GetMaxSkillLevel(L["Skinning"])
+    local requiredSkill = GetRequiredSkinningSkill(mobLevel)
+    local maxSkinnableLevel = GetMaxSkinnableMobLevel(playerSkill)
+    local colour = GT:GetSkinningColor(mobLevel, playerSkill)
+    local maxSkill = GT:GetMaxSkillLevel(skillName)
     
-    local coloredText = "|c"..color..L["Skinning"].."|r ("..L["Req:"].." "..requiredSkill..")"
-    tooltip:AddLine(coloredText, 1, 1, 1)
+    local colouredText = "|c"..colour..skillName.."|r ("..L["Req:"].." "..requiredSkill..")"
+    tooltip:AddLine(colouredText, 1, 1, 1)
 
     -- Add skinning information
     if maxSkill then
-                    tooltip:AddLine("|c"..otherColours.white..L["Current"].." "..L["Skinning"].." "..L["Skill"]..":|r "..playerSkill.."/"..maxSkill, 1, 1, 1)
+                    tooltip:AddLine("|c"..otherColours.white..L["Current"].." "..skillName.." "..L["Skill"]..":|r "..playerSkill.."/"..maxSkill, 1, 1, 1)
                 else
-                    tooltip:AddLine("|c"..otherColours.white..L["Current"].." "..L["Skinning"].." "..L["Skill"]..":|r "..playerSkill, 1, 1, 1)
+                    tooltip:AddLine("|c"..otherColours.white..L["Current"].." "..skillName.." "..L["Skill"]..":|r "..playerSkill, 1, 1, 1)
                 end
     tooltip:Show()
 end
 
+local skinningSkills = {L["Skinning"], L["Mining"], L["Herbalism"]}
+local function UpdateTooltip(tooltip)
 local function UpdateMiningTooltip(tooltip)
     if not showMobMining then return end
     -- Get the unit from the tooltip
@@ -2527,9 +2711,9 @@ function GatheringTooltip:UpdateTooltip(tooltip)
 
     local _, unit = tooltip:GetUnit()
     if unit then
-        UpdateSkinningTooltip(tooltip)
-        UpdateMiningTooltip(tooltip)
-        UpdateHerbalismTooltip(tooltip)
+        for _, skill in ipairs(skinningSkills)do
+            UpdateSkinningTooltip(tooltip, skill)
+        end
         return
     end
 
@@ -2560,7 +2744,7 @@ function GatheringTooltip:UpdateTooltip(tooltip)
                 if nodeName == "Frozen Herb" then 
                     local currentSubzone = GetRealZoneText() -- Get the current subzone 
                     local currentZone = GetZoneText() -- Assume this gets the larger zone
-                    nodeData = nodeData[currentZone] or nodeData[parentZone] or nodeData["any"] 
+                    nodeData = nodeData[currentZone] or nodeData[currentSubzone] or nodeData["any"] -- or nodeData[parentZone] 
                 end
 
                 if not match_found then
@@ -2571,7 +2755,7 @@ function GatheringTooltip:UpdateTooltip(tooltip)
                         DebugPrint("Node data:", nodeData)
                         local skillName = nodeData.skill
                         local requiredSkill = nodeData.requiredSkill
-                        local playerSkill = GetSkillLevel(skillName)
+                        local playerSkill = GT:GetSkillLevel(skillName)
                         playerSkills[skillName] = playerSkill -- Store the player's skill level for this gathering skill
                         DebugPrint("Skill name:", skillName)
                         DebugPrint("Player skill:", playerSkill)
@@ -2581,7 +2765,7 @@ function GatheringTooltip:UpdateTooltip(tooltip)
                         local plainText = nodeLine:gsub("|c%x%x%x%x%x%x%x%x(.-)|r", "%1")
 
                         if playerSkill then
-                            local color = GetSkillColor(nodeData.thresholds, requiredSkill, playerSkill)
+                            local color = GT:GetSkillColor(nodeData.thresholds, requiredSkill, playerSkill)
                             DebugPrint("Color:", color)
                             local coloredText = "|c"..color..plainText.."|r ("..L["Req:"].." "..requiredSkill..")"
                             tooltipText = tooltipText:gsub(nodeLine, coloredText)
@@ -2597,7 +2781,7 @@ function GatheringTooltip:UpdateTooltip(tooltip)
     if foundNodes then
         for skillName, playerSkill in pairs(playerSkills) do
             if playerSkill then
-                local maxSkill = GetMaxSkillLevel(skillName)
+                local maxSkill = GT:GetMaxSkillLevel(skillName)
                 if maxSkill then
                     tooltip:AddLine(L["Current"].." "..skillName.." "..L["Skill"]..": "..playerSkill.."/"..maxSkill, 1, 1, 1)
                 else
