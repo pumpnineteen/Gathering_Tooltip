@@ -75,6 +75,7 @@ L["Engineering info on mob tooltips is now disabled."] = true
 L["Usage: /gtt toggle <skinning|mining|herbalism|engineering>"] = true
 L["All gathering info on mob tooltips is now disabled."] = true
 L["All gathering info on mob tooltips is now enabled."] = true
+L["Engineering"] = true
 
 
 local nodeNameList = {
@@ -2597,17 +2598,45 @@ local function isGatherable(unit)
     return false
 end
 
+local skinningSkills = {L["Skinning"], L["Mining"], L["Herbalism"], L["Engineering"]}
 
-local function UpdateSkinningTooltip(tooltip, skillName)
-local function UpdateSkinningTooltip(tooltip)
-    if not showMobSkinning then return end
+local function showMob(skillName)
+    if skillName == L["Skinning"] then
+        return showMobSkinning
+    elseif skillName == L["Mining"] then
+        return showMobMining
+    elseif skillName == L["Herbalism"] then
+        return showMobHerbalism
+    elseif skillName == L["Engineering"] then
+        return showMobEngineering
+    end 
+    
+    return false
+end
+
+local function isMobGatherable(skillName, unit)
+    if skillName == L["Skinning"] then
+        return isSkinnable(unit)
+    elseif skillName == L["Mining"] then
+        return isMinable(unit)
+    elseif skillName == L["Herbalism"] then
+        return isGatherable(unit)
+    elseif skillName == L["Engineering"] then
+        return false -- TODO: Add the engineering version
+    end 
+    
+    return false
+end
+
+local function UpdateMobTooltip(tooltip, skillName)
+    if not showMob(skillName) then return end
     -- Get the unit from the tooltip
     local _, unit = tooltip:GetUnit()
     if not unit then return end
     
     -- Get creature type and level
     -- local creatureType = UnitCreatureType(unit)
-    if not isSkinnable(unit) then return end
+    if not isMobGatherable(skillName, unit) then return end
     
     -- Get mob level
     local mobLevel = UnitLevel(unit)
@@ -2633,78 +2662,8 @@ local function UpdateSkinningTooltip(tooltip)
     tooltip:Show()
 end
 
-local skinningSkills = {L["Skinning"], L["Mining"], L["Herbalism"]}
-local function UpdateTooltip(tooltip)
-local function UpdateMiningTooltip(tooltip)
-    if not showMobMining then return end
-    -- Get the unit from the tooltip
-    local _, unit = tooltip:GetUnit()
-    if not unit then return end
-    
-    -- Get creature type and level
-    -- local creatureType = UnitCreatureType(unit)
-    if not isMinable(unit) then return end
-    
-    -- Get mob level
-    local mobLevel = UnitLevel(unit)
-    if not mobLevel or mobLevel <= 0 then return end -- Level 0 or negative means hidden/boss
-    
-    local playerSkill = GetSkillLevel(L["Mining"])
-    if not playerSkill then return end
-    
-    local requiredSkill = getRequiredSkinningSkill(mobLevel)
-    local maxSkinnableLevel = getMaxSkinnableMobLevel(playerSkill)
-    local color = getSkinningColor(mobLevel, playerSkill)
-    local maxSkill = GetMaxSkillLevel(L["Mining"])
-    
-    local coloredText = "|c"..color..L["Mining"].."|r ("..L["Req:"].." "..requiredSkill..")"
-    tooltip:AddLine(coloredText, 1, 1, 1)
-
-    -- Add skinning information
-    if maxSkill then
-                    tooltip:AddLine("|c"..otherColours.white..L["Current"].." "..L["Mining"].." "..L["Skill"]..":|r "..playerSkill.."/"..maxSkill, 1, 1, 1)
-                else
-                    tooltip:AddLine("|c"..otherColours.white..L["Current"].." "..L["Mining"].." "..L["Skill"]..":|r "..playerSkill, 1, 1, 1)
-                end
-    tooltip:Show()
-end
-
-local function UpdateHerbalismTooltip(tooltip)
-    if not showMobHerbalism then return end
-    -- Get the unit from the tooltip
-    local _, unit = tooltip:GetUnit()
-    if not unit then return end
-    
-    -- Get creature type and level
-    -- local creatureType = UnitCreatureType(unit)
-    if not isGatherable(unit) then return end
-    
-    -- Get mob level
-    local mobLevel = UnitLevel(unit)
-    if not mobLevel or mobLevel <= 0 then return end -- Level 0 or negative means hidden/boss
-    
-    local playerSkill = GetSkillLevel(L["Herbalism"])
-    if not playerSkill then return end
-    
-    local requiredSkill = getRequiredSkinningSkill(mobLevel)
-    local maxSkinnableLevel = getMaxSkinnableMobLevel(playerSkill)
-    local color = getSkinningColor(mobLevel, playerSkill)
-    local maxSkill = GetMaxSkillLevel(L["Herbalism"])
-    
-    local coloredText = "|c"..color..L["Herbalism"].."|r ("..L["Req:"].." "..requiredSkill..")"
-    tooltip:AddLine(coloredText, 1, 1, 1)
-
-    -- Add skinning information
-    if maxSkill then
-                    tooltip:AddLine("|c"..otherColours.white..L["Current"].." "..L["Herbalism"].." "..L["Skill"]..":|r "..playerSkill.."/"..maxSkill, 1, 1, 1)
-                else
-                    tooltip:AddLine("|c"..otherColours.white..L["Current"].." "..L["Herbalism"].." "..L["Skill"]..":|r "..playerSkill, 1, 1, 1)
-                end
-    tooltip:Show()
-end
-
 -- Function to update tooltips
-function GatheringTooltip:UpdateTooltip(tooltip)
+function GT:UpdateTooltip(tooltip)
     if not tooltip or type(tooltip.GetRegions) ~= "function" then
         return
     end
@@ -2712,7 +2671,7 @@ function GatheringTooltip:UpdateTooltip(tooltip)
     local _, unit = tooltip:GetUnit()
     if unit then
         for _, skill in ipairs(skinningSkills)do
-            UpdateSkinningTooltip(tooltip, skill)
+            UpdateMobTooltip(tooltip, skill)
         end
         return
     end
@@ -2797,33 +2756,33 @@ end
 -- Hook for all tooltips
 GameTooltip:HookScript("OnTooltipSetItem", function(tooltip)
     DebugPrint("GameTooltip OnTooltipSetItem")
-    GatheringTooltip:UpdateTooltip(tooltip)
+    GT:UpdateTooltip(tooltip)
 end)
 
 GameTooltip:HookScript("OnShow", function(tooltip)
     DebugPrint("GameTooltip OnShow")
-    GatheringTooltip:UpdateTooltip(tooltip)
+    GT:UpdateTooltip(tooltip)
 end)
 
 ItemRefTooltip:HookScript("OnTooltipSetItem", function(tooltip)
     DebugPrint("ItemRefTooltip OnTooltipSetItem")
-    GatheringTooltip:UpdateTooltip(tooltip)
+    GT:UpdateTooltip(tooltip)
 end)
 
 
 ItemRefTooltip:HookScript("OnShow", function(tooltip)
     DebugPrint("ItemRefTooltip OnShow")
-    GatheringTooltip:UpdateTooltip(tooltip)
+    GT:UpdateTooltip(tooltip)
 end)
 
 ShoppingTooltip1:HookScript("OnShow", function(tooltip)
     DebugPrint("ShoppingTooltip1 OnShow")
-    GatheringTooltip:UpdateTooltip(tooltip)
+    GT:UpdateTooltip(tooltip)
 end)
 
 ShoppingTooltip2:HookScript("OnShow", function(tooltip)
     DebugPrint("ShoppingTooltip2 OnShow")
-    GatheringTooltip:UpdateTooltip(tooltip)
+    GT:UpdateTooltip(tooltip)
 end)
 
 
@@ -2840,7 +2799,7 @@ local defaults = {
     },
 }
 
-function GatheringTooltip:OnEnable()
+function GT:OnEnable()
     db = LibStub("AceDB-3.0"):New("GatheringTooltipDB", defaults, true)
     showMobSkinning = db.global.showMobSkinning
     showMobMining = db.global.showMobMining
@@ -2853,11 +2812,11 @@ function GatheringTooltip:OnEnable()
     db.global.showMobEngineering = showMobEngineering
 end
 
-function GatheringTooltip:OnInitialize()
+function GT:OnInitialize()
     self:RegisterChatCommand("gtt", "HandleSlashCommand")
 end
 
-function GatheringTooltip:HandleSlashCommand(msg)
+function GT:HandleSlashCommand(msg)
     local args = split(msg)
     local _msg = args[1]
     if _msg == "toggle" then
@@ -2871,7 +2830,7 @@ function GatheringTooltip:HandleSlashCommand(msg)
     end
 end
 
-function GatheringTooltip:HandleToggle(args)
+function GT:HandleToggle(args)
     local option = args[2]
     if option == "skinning" then
         db.global.showMobSkinning = not db.global.showMobSkinning
@@ -2921,12 +2880,12 @@ local function switchAllMob(state)
     showMobEngineering = state
 end
 
-function GatheringTooltip:handleDisable()
+function GT:handleDisable()
     switchAllMob(false)
     print(L["All gathering info on mob tooltips is now disabled."])
 end
 
-function GatheringTooltip:handleEnable()
+function GT:handleEnable()
     switchAllMob(true)
     print(L["All gathering info on mob tooltips is now enabled."])
 end
