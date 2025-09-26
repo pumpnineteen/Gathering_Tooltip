@@ -63,6 +63,7 @@ local EnumerateTooltipLines = EnumerateTooltipLines
 local GetRealZoneText       = GetRealZoneText
 local GetZoneText           = GetZoneText
 local GetChatTypeIndex      = GetChatTypeIndex
+local GameTooltip           = GameTooltip
 
 
 local nodeNameList = {
