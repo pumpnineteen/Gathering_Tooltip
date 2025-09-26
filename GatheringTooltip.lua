@@ -3,7 +3,9 @@ local GT = LibStub("AceAddon-3.0"):NewAddon(addonName, "AceConsole-3.0", "AceEve
 
 -- Initialize localization
 local L = LibStub("AceLocale-3.0"):GetLocale("GatheringTooltip")
+local LL = LibStub("AceLocale-3.0"):GetLocale("GatheringTooltipL")
 local NL = LibStub("AceLocale-3.0"):GetLocale("GatheringTooltipNodes")
+
 
 -- Expansion determination code from LibBagUtils.lua
 local WOW_PROJECT_ID = _G.WOW_PROJECT_ID
@@ -61,21 +63,6 @@ local EnumerateTooltipLines = EnumerateTooltipLines
 local GetRealZoneText       = GetRealZoneText
 local GetZoneText           = GetZoneText
 local GetChatTypeIndex      = GetChatTypeIndex
-
--- TODO: Properly localize these strings
-L["Usage: /gtt <toggle|enable|disable> <skinning|mining|herbalism|engineering>"] = true
-L["Skinning info on mob tooltips is now enabled."] = true
-L["Skinning info on mob tooltips is now disabled."] = true
-L["Mining info on mob tooltips is now enabled."] = true
-L["Mining info on mob tooltips is now disabled."] = true
-L["Herbalism info on mob tooltips is now enabled."] = true
-L["Herbalism info on mob tooltips is now disabled."] = true
-L["Engineering info on mob tooltips is now enabled."] = true
-L["Engineering info on mob tooltips is now disabled."] = true
-L["Usage: /gtt toggle <skinning|mining|herbalism|engineering>"] = true
-L["All gathering info on mob tooltips is now disabled."] = true
-L["All gathering info on mob tooltips is now enabled."] = true
-L["Engineering"] = true
 
 
 local nodeNameList = {
@@ -2621,7 +2608,7 @@ local function isMobGatherable(skillName, unit)
         return isMinable(unit)
     elseif skillName == L["Herbalism"] then
         return isGatherable(unit)
-    elseif skillName == L["Engineering"] then
+    elseif skillName == LL["Engineering"] then
         return false -- TODO: Add the engineering version
     end 
     
@@ -2826,7 +2813,7 @@ function GT:HandleSlashCommand(msg)
     elseif _msg == "enable" then
         self:HandleEnable()
     else
-        print(L["Usage: /gtt <toggle|enable|disable> <skinning|mining|herbalism|engineering>"])
+        print(LL["Usage: /gtt <toggle|enable|disable> <skinning|mining|herbalism|engineering>"])
     end
 end
 
@@ -2836,36 +2823,36 @@ function GT:HandleToggle(args)
         db.global.showMobSkinning = not db.global.showMobSkinning
         showMobSkinning = db.global.showMobSkinning
         if db.global.showMobSkinning then
-            print(L["Skinning info on mob tooltips is now enabled."])
+            print(LL["Skinning info on mob tooltips is now enabled."])
         else
-            print(L["Skinning info on mob tooltips is now disabled."])
+            print(LL["Skinning info on mob tooltips is now disabled."])
         end
     elseif option == "mining" then
         db.global.showMobMining = not db.global.showMobMining
         showMobMining = db.global.showMobMining
         if db.global.showMobMining then
-            print(L["Mining info on mob tooltips is now enabled."])
+            print(LL["Mining info on mob tooltips is now enabled."])
         else
-            print(L["Mining info on mob tooltips is now disabled."])
+            print(LL["Mining info on mob tooltips is now disabled."])
         end
     elseif option == "herbalism" then
         db.global.showMobHerbalism = not db.global.showMobHerbalism
         showMobHerbalism = db.global.showMobHerbalism
         if db.global.showMobHerbalism then
-            print(L["Herbalism info on mob tooltips is now enabled."])
+            print(LL["Herbalism info on mob tooltips is now enabled."])
         else
-            print(L["Herbalism info on mob tooltips is now disabled."])
+            print(LL["Herbalism info on mob tooltips is now disabled."])
         end
     elseif option == "engineering" then
         db.global.showMobEngineering = not db.global.showMobEngineering
         showMobEngineering = db.global.showMobEngineering
         if db.global.showMobEngineering then
-            print(L["Engineering info on mob tooltips is now enabled."])
+            print(LL["Engineering info on mob tooltips is now enabled."])
         else
-            print(L["Engineering info on mob tooltips is now disabled."])
+            print(LL["Engineering info on mob tooltips is now disabled."])
         end
     else
-        print(L["Usage: /gtt toggle <skinning|mining|herbalism|engineering>"])
+        print(LL["Usage: /gtt toggle <skinning|mining|herbalism|engineering>"])
     end
 end
 
@@ -2882,10 +2869,10 @@ end
 
 function GT:HandleDisable()
     SwitchAllMob(false)
-    print(L["All gathering info on mob tooltips is now disabled."])
+    print(LL["All gathering info on mob tooltips is now disabled."])
 end
 
 function GT:HandleEnable()
     SwitchAllMob(true)
-    print(L["All gathering info on mob tooltips is now enabled."])
+    print(LL["All gathering info on mob tooltips is now enabled."])
 end

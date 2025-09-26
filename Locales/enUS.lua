@@ -11,6 +11,22 @@ local L = LibStub("AceLocale-3.0"):NewLocale("GatheringTooltip", "enUS", true, d
 
 local NL = LibStub("AceLocale-3.0"):NewLocale("GatheringTooltipNodes", "enUS", true, debug)
 
+-- TODO: Properly localize these strings
+local LL = LibStub("AceLocale-3.0"):NewLocale("GatheringTooltipL", "enUS", true, false)
+LL["Usage: /gtt <toggle|enable|disable> <skinning|mining|herbalism|engineering>"] = true
+LL["Skinning info on mob tooltips is now enabled."] = true
+LL["Skinning info on mob tooltips is now disabled."] = true
+LL["Mining info on mob tooltips is now enabled."] = true
+LL["Mining info on mob tooltips is now disabled."] = true
+LL["Herbalism info on mob tooltips is now enabled."] = true
+LL["Herbalism info on mob tooltips is now disabled."] = true
+LL["Engineering info on mob tooltips is now enabled."] = true
+LL["Engineering info on mob tooltips is now disabled."] = true
+LL["Usage: /gtt toggle <skinning|mining|herbalism|engineering>"] = true
+LL["All gathering info on mob tooltips is now disabled."] = true
+LL["All gathering info on mob tooltips is now enabled."] = true
+LL["Engineering"] = true
+
 -- Options
 L["Humanoid"] = true
 L["Gas filter"] = true
