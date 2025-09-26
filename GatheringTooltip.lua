@@ -2655,9 +2655,9 @@ local function UpdateMobTooltip(tooltip, skillName)
 
     -- Add skinning information
     if maxSkill then
-                    tooltip:AddLine("|c"..otherColours.white..L["Current"].." "..skillName.." "..L["Skill"]..":|r "..playerSkill.."/"..maxSkill, 1, 1, 1)
+                    tooltip:AddLine("|c"..otherColours.white..L["Current"].." "..skillName..":|r "..playerSkill.."/"..maxSkill, 1, 1, 1)
                 else
-                    tooltip:AddLine("|c"..otherColours.white..L["Current"].." "..skillName.." "..L["Skill"]..":|r "..playerSkill, 1, 1, 1)
+                    tooltip:AddLine("|c"..otherColours.white..L["Current"].." "..skillName..":|r "..playerSkill, 1, 1, 1)
                 end
     tooltip:Show()
 end
