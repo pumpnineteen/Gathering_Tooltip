@@ -2662,10 +2662,17 @@ local function UpdateMobTooltip(tooltip, skillName)
 end
 
 -- Function to update tooltips
+local lastUpdate = {}
 function GT:UpdateTooltip(tooltip)
     if not tooltip or type(tooltip.GetRegions) ~= "function" then
         return
     end
+    local now = GetTime()
+    if lastUpdate[tooltip] and (now - lastUpdate[tooltip]) < 0.01 then
+        return
+    end
+    lastUpdate[tooltip] = now
+    
 
     local _, unit = tooltip:GetUnit()
     if unit then
@@ -2755,6 +2762,10 @@ end
 -- Hook for all tooltips
 GameTooltip:HookScript("OnTooltipSetItem", function(tooltip)
     DebugPrint("GameTooltip OnTooltipSetItem")
+    GT:UpdateTooltip(tooltip)
+end)
+
+GameTooltip:HookScript("OnTooltipSetUnit", function(tooltip)
     GT:UpdateTooltip(tooltip)
 end)
 
