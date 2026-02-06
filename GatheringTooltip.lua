@@ -2769,10 +2769,10 @@ GameTooltip:HookScript("OnTooltipSetUnit", function(tooltip)
     GT:UpdateTooltip(tooltip)
 end)
 
-GameTooltip:HookScript("OnShow", function(tooltip)
-    DebugPrint("GameTooltip OnShow")
-    GT:UpdateTooltip(tooltip)
-end)
+-- GameTooltip:HookScript("OnShow", function(tooltip)
+--     DebugPrint("GameTooltip OnShow")
+--     GT:UpdateTooltip(tooltip)
+-- end)
 
 ItemRefTooltip:HookScript("OnTooltipSetItem", function(tooltip)
     DebugPrint("ItemRefTooltip OnTooltipSetItem")
@@ -2780,20 +2780,20 @@ ItemRefTooltip:HookScript("OnTooltipSetItem", function(tooltip)
 end)
 
 
-ItemRefTooltip:HookScript("OnShow", function(tooltip)
-    DebugPrint("ItemRefTooltip OnShow")
-    GT:UpdateTooltip(tooltip)
-end)
+-- ItemRefTooltip:HookScript("OnShow", function(tooltip)
+--     DebugPrint("ItemRefTooltip OnShow")
+--     GT:UpdateTooltip(tooltip)
+-- end)
 
-ShoppingTooltip1:HookScript("OnShow", function(tooltip)
-    DebugPrint("ShoppingTooltip1 OnShow")
-    GT:UpdateTooltip(tooltip)
-end)
+-- ShoppingTooltip1:HookScript("OnShow", function(tooltip)
+--     DebugPrint("ShoppingTooltip1 OnShow")
+--     GT:UpdateTooltip(tooltip)
+-- end)
 
-ShoppingTooltip2:HookScript("OnShow", function(tooltip)
-    DebugPrint("ShoppingTooltip2 OnShow")
-    GT:UpdateTooltip(tooltip)
-end)
+-- ShoppingTooltip2:HookScript("OnShow", function(tooltip)
+--     DebugPrint("ShoppingTooltip2 OnShow")
+--     GT:UpdateTooltip(tooltip)
+-- end)
 
 
 local defaults = {
