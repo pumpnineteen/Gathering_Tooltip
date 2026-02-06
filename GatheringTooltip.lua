@@ -2317,6 +2317,17 @@ local eventHandlers = {
 }
 
 function GT:OnEnable()
+    db = LibStub("AceDB-3.0"):New("GatheringTooltipDB", defaults, true)
+    showMobSkinning = db.global.showMobSkinning
+    showMobMining = db.global.showMobMining
+    showMobHerbalism = db.global.showMobHerbalism
+    showMobEngineering = db.global.showMobEngineering
+
+    db.global.showMobSkinning = showMobSkinning
+    db.global.showMobMining = showMobMining
+    db.global.showMobHerbalism = showMobHerbalism
+    db.global.showMobEngineering = showMobEngineering
+
     if IsClassicWow() then MAX_SKILL = ARTISAN_MAX
     elseif IsTBCWow() then MAX_SKILL = MASTER_MAX 
     elseif IsWrathWow() then MAX_SKILL = GRAND_MASTER_MAX
@@ -2786,19 +2797,6 @@ local defaults = {
         showMobEngineering = true,
     },
 }
-
-function GT:OnEnable()
-    db = LibStub("AceDB-3.0"):New("GatheringTooltipDB", defaults, true)
-    showMobSkinning = db.global.showMobSkinning
-    showMobMining = db.global.showMobMining
-    showMobHerbalism = db.global.showMobHerbalism
-    showMobEngineering = db.global.showMobEngineering
-
-    db.global.showMobSkinning = showMobSkinning
-    db.global.showMobMining = showMobMining
-    db.global.showMobHerbalism = showMobHerbalism
-    db.global.showMobEngineering = showMobEngineering
-end
 
 function GT:OnInitialize()
     self:RegisterChatCommand("gtt", "HandleSlashCommand")
