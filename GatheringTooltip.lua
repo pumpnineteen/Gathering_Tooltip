@@ -75,7 +75,10 @@ local nodeNameList = {
     NL["Ooze Covered Thorium Vein"],
     NL["Ooze Covered Truesilver Deposit"],
     NL["Copper Vein"],
+    NL["Rich Ghost Iron Deposit"],
+    NL["Ghost Iron Deposit"],
     NL["Dark Iron Deposit"],
+    NL["Fel Iron Deposit"],
     NL["Iron Deposit"],
     NL["Gold Vein"],
     NL["Mithril Deposit"],
@@ -86,43 +89,45 @@ local nodeNameList = {
     NL["Tin Vein"],
     NL["Truesilver Deposit"],
     -- TBC Mining Nodes --
-    NL["Fel Iron Deposit"],
     NL["Adamantite Deposit"],
     NL["Rich Adamantite Deposit"],
     NL["Khorium Vein"],
     -- WOTLK Mining Nodes --
-    NL["Cobalt Deposit"],
     NL["Rich Cobalt Deposit"],
+    NL["Cobalt Deposit"],
     NL["Rich Saronite Deposit"],
     NL["Saronite Deposit"],
     NL["Titanium Vein"],
     -- Cataclysm Mining Nodes --
-    NL["Obsidium Deposit"],
     NL["Rich Obsidium Deposit"],
-    NL["Elementium Vein"],
+    NL["Obsidium Deposit"],
     NL["Rich Elementium Vein"],
-    NL["Pyrite Deposit"],
+    NL["Elementium Vein"],
     NL["Rich Pyrite Deposit"],
+    NL["Pyrite Deposit"],
+    
     -- MOP Mining Nodes --
-    NL["Ghost Iron Deposit"],
-    NL["Rich Ghost Iron Deposit"],
-    NL["Kyparite Deposit"],
+    
     NL["Rich Kyparite Deposit"],
-    NL["Trillium Vein"],
+    NL["Kyparite Deposit"],
     NL["Rich Trillium Vein"],
+    NL["Trillium Vein"],
+    
 
     -- Classic Ores --
     NL["Copper Ore"],
     NL["Tin Ore"],
     NL["Silver Ore"],
     NL["Dark Iron Ore"],
+    NL["Fel Iron Ore"],
+    NL["Ghost Iron Ore"],
     NL["Iron Ore"],
     NL["Gold Ore"],
     NL["Mithril Ore"],
     NL["Truesilver Ore"],
     NL["Thorium Ore"],
     -- TBC Ores --
-    NL["Fel Iron Ore"],
+    
     NL["Adamantite Ore"],
     NL["Khorium Ore"],
     -- WOTLK Ores --
@@ -134,7 +139,7 @@ local nodeNameList = {
     NL["Elementium Ore"],
     NL["Pyrite Ore"],
     -- MOP Ores --
-    NL["Ghost Iron Ore"],
+    
     NL["Kyparite"],
     NL["Black Trillium Ore"],
     NL["White Trillium Ore"],
@@ -2339,6 +2344,8 @@ function GT:OnEnable()
     end
 
     self.lastChecked = 0
+
+    self:CreateHooks()
 end
 
 function GT:MaybeCheckMaxSkill()
@@ -2758,42 +2765,45 @@ function GT:UpdateTooltip(tooltip)
     end
 end
 
+function GT:CreateHooks()
 
--- Hook for all tooltips
-GameTooltip:HookScript("OnTooltipSetItem", function(tooltip)
-    DebugPrint("GameTooltip OnTooltipSetItem")
-    GT:UpdateTooltip(tooltip)
-end)
+    -- Hook for all tooltips
+    GameTooltip:HookScript("OnTooltipSetItem", function(tooltip)
+        DebugPrint("GameTooltip OnTooltipSetItem")
+        GT:UpdateTooltip(tooltip)
+    end)
 
-GameTooltip:HookScript("OnTooltipSetUnit", function(tooltip)
-    GT:UpdateTooltip(tooltip)
-end)
+    GameTooltip:HookScript("OnTooltipSetUnit", function(tooltip)
+        GT:UpdateTooltip(tooltip)
+    end)
 
--- GameTooltip:HookScript("OnShow", function(tooltip)
---     DebugPrint("GameTooltip OnShow")
---     GT:UpdateTooltip(tooltip)
--- end)
+    GameTooltip:HookScript("OnShow", function(tooltip)
+        DebugPrint("GameTooltip OnShow")
+        GT:UpdateTooltip(tooltip)
+    end)
 
-ItemRefTooltip:HookScript("OnTooltipSetItem", function(tooltip)
-    DebugPrint("ItemRefTooltip OnTooltipSetItem")
-    GT:UpdateTooltip(tooltip)
-end)
+    ItemRefTooltip:HookScript("OnTooltipSetItem", function(tooltip)
+        DebugPrint("ItemRefTooltip OnTooltipSetItem")
+        GT:UpdateTooltip(tooltip)
+    end)
 
 
--- ItemRefTooltip:HookScript("OnShow", function(tooltip)
---     DebugPrint("ItemRefTooltip OnShow")
---     GT:UpdateTooltip(tooltip)
--- end)
+    ItemRefTooltip:HookScript("OnShow", function(tooltip)
+        DebugPrint("ItemRefTooltip OnShow")
+        GT:UpdateTooltip(tooltip)
+    end)
 
--- ShoppingTooltip1:HookScript("OnShow", function(tooltip)
---     DebugPrint("ShoppingTooltip1 OnShow")
---     GT:UpdateTooltip(tooltip)
--- end)
+    ShoppingTooltip1:HookScript("OnShow", function(tooltip)
+        DebugPrint("ShoppingTooltip1 OnShow")
+        GT:UpdateTooltip(tooltip)
+    end)
 
--- ShoppingTooltip2:HookScript("OnShow", function(tooltip)
---     DebugPrint("ShoppingTooltip2 OnShow")
---     GT:UpdateTooltip(tooltip)
--- end)
+    ShoppingTooltip2:HookScript("OnShow", function(tooltip)
+        DebugPrint("ShoppingTooltip2 OnShow")
+        GT:UpdateTooltip(tooltip)
+    end)
+
+end
 
 
 local defaults = {
