@@ -160,6 +160,7 @@ NL["Briarthorn"] = true
 NL["Cobalt Ore"] = true
 NL["Saronite Ore"] = true
 NL["Goldclover"] = true
+NL["Dreaming Glory"] = true
 
 -- MOP Mining Nodes --
 NL["Ghost Iron Deposit"] = true
