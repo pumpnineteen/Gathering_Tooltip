@@ -215,6 +215,11 @@ local nodeNameList = {
 
 }
 
+--credit: lanjian625
+table.sort(nodeNameList, function(a, b)
+    return #a > #b
+end)
+
 local nodeInfo = {
     -- Classic Mining Nodes --
     [NL["Copper Vein"]] = { skill = L["Mining"], thresholds = { grey = 100, green = 50, yellow = 25 }, requiredSkill = 1 },
@@ -369,6 +374,7 @@ local nodeInfo = {
     -- Classic Fishing Nodes --
     
 }
+
 
 local skinnable_npcs = {
     [524] = true, -- Rockhide Boar > classic/tbc
